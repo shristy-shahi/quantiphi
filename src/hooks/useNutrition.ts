@@ -1,5 +1,6 @@
 import { useContext } from 'react';
-import { NutritionContext, NutritionContextProps } from '../context/NutritionContext';
+import { NutritionContext } from '../context/NutritionContext';
+import type { NutritionContextProps } from '../context/NutritionContext';
 
 export const useNutrition = (): NutritionContextProps => {
   const context = useContext(NutritionContext);

@@ -1,8 +1,8 @@
-import { NutritionState, NutritionAction, FoodItem } from '../types/nutrition';
+import type { NutritionState, NutritionAction, FoodItem, FitnessGoal } from '../types/nutrition';
 import { GOAL_TARGETS } from '../utils/constants';
 import { calculateTotals } from '../utils/calculator';
 
-export const initialNutritionState = (initialGoal = 'Maintenance' as const): NutritionState => {
+export const initialNutritionState = (initialGoal: FitnessGoal = 'Maintenance'): NutritionState => {
   const targets = GOAL_TARGETS[initialGoal];
   return {
     meals: [],
@@ -78,6 +78,16 @@ export const nutritionReducer = (
       return {
         ...state,
         warningDismissed: true,
+      };
+    }
+
+    case 'CLEAR_MEALS': {
+      return {
+        ...state,
+        meals: [],
+        totals: { calories: 0, protein: 0, carbs: 0, fats: 0 },
+        exceeded: false,
+        warningDismissed: false,
       };
     }
 

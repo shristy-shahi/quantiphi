@@ -1,4 +1,4 @@
-import { FitnessGoal, DailyTargets } from '../types/nutrition';
+import type { FitnessGoal, DailyTargets } from '../types/nutrition';
 
 export const GOAL_TARGETS: Record<FitnessGoal, DailyTargets> = {
   'Weight Loss': {

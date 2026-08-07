@@ -375,7 +375,7 @@ A successful contributor to this project should be comfortable with:
 - Component-based architecture
 - Functional programming concepts
 - Accessibility
-- Testing
+- Testing  
 - Git workflows
 - Documentation
 - Collaborative development with AI tools

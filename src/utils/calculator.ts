@@ -1,4 +1,4 @@
-import { FoodItem, NutritionTotals } from '../types/nutrition';
+import type { FoodItem, NutritionTotals } from '../types/nutrition';
 
 /**
  * Scaled Value = (Base Value × Grams) / 100

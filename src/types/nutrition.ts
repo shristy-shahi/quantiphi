@@ -37,4 +37,5 @@ export type NutritionAction =
   | { type: 'ADD_MEAL'; payload: Omit<FoodItem, 'id'> & { id?: string } }
   | { type: 'DELETE_MEAL'; payload: string }
   | { type: 'SET_GOAL'; payload: FitnessGoal }
-  | { type: 'CLOSE_WARNING' };
+  | { type: 'CLOSE_WARNING' }
+  | { type: 'CLEAR_MEALS' };
