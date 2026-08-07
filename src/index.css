@@ -2,37 +2,50 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Custom scrollbars and styling variables */
+/* ── Base Layer ── */
 @layer base {
   :root {
     color-scheme: dark;
   }
-  body {
+
+  /* Dark mode (default) */
+  html.dark body {
     background-color: #030712;
     color: #f3f4f6;
+  }
+
+  /* Light mode */
+  html.light body {
+    background-color: #f8fafc;
+    color: #1e293b;
+  }
+  html.light {
+    color-scheme: light;
+  }
+
+  body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
+    transition: background-color 0.5s ease, color 0.5s ease;
   }
 
-  /* Custom Glow scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #0b0f19;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #1e293b;
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #3b82f6;
-  }
+  /* Dark scrollbar */
+  html.dark ::-webkit-scrollbar { width: 6px; height: 6px; }
+  html.dark ::-webkit-scrollbar-track { background: #0b0f19; }
+  html.dark ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+  html.dark ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+
+  /* Light scrollbar */
+  html.light ::-webkit-scrollbar { width: 6px; height: 6px; }
+  html.light ::-webkit-scrollbar-track { background: #f1f5f9; }
+  html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  html.light ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
 }
 
-/* Glassmorphism card utilities */
-.glass-panel {
+/* ── Glassmorphism Panels ── */
+
+/* Dark mode panels */
+html.dark .glass-panel {
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -40,7 +53,7 @@
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
-.glass-panel-glow {
+html.dark .glass-panel-glow {
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -48,7 +61,7 @@
   box-shadow: 0 8px 32px 0 rgba(59, 130, 246, 0.1);
 }
 
-.glass-panel-danger {
+html.dark .glass-panel-danger {
   background: rgba(27, 4, 4, 0.65);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -56,20 +69,50 @@
   box-shadow: 0 8px 32px 0 rgba(239, 68, 68, 0.15);
 }
 
-/* Glowing text and animations */
-.text-glow-accent {
+/* Light mode panels */
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.06);
+}
+
+html.light .glass-panel-glow {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  box-shadow: 0 4px 24px 0 rgba(59, 130, 246, 0.06);
+}
+
+html.light .glass-panel-danger {
+  background: rgba(254, 226, 226, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 24px 0 rgba(239, 68, 68, 0.08);
+}
+
+/* ── Glowing text ── */
+html.dark .text-glow-accent {
   text-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
 }
-
-.text-glow-glowing {
+html.dark .text-glow-glowing {
   text-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
 }
-
-.text-glow-danger {
+html.dark .text-glow-danger {
   text-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
-/* Pulse animation for exceeded warnings */
+/* Light mode: no glow (clean look) */
+html.light .text-glow-accent,
+html.light .text-glow-glowing,
+html.light .text-glow-danger {
+  text-shadow: none;
+}
+
+/* ── Animations ── */
 @keyframes glow-pulse-red {
   0%, 100% {
     border-color: rgba(239, 68, 68, 0.3);
@@ -85,22 +128,15 @@
   animation: glow-pulse-red 2s infinite ease-in-out;
 }
 
-/* Custom progress bar animations */
 .progress-bar-transition {
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
 }
 
-/* Scanning line animation for AI food detection */
+/* Scanning line */
 @keyframes scan-animation {
-  0% {
-    top: 0%;
-  }
-  50% {
-    top: 100%;
-  }
-  100% {
-    top: 0%;
-  }
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
 }
 
 .scan-line {
