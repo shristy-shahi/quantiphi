@@ -64,10 +64,10 @@ export const WarningModal: React.FC = () => {
             id="warning-title"
             className="text-xl font-black uppercase text-red-400 tracking-wider text-glow-danger"
           >
-            Gravity Limit Exceeded
+            Calorie Limit Exceeded
           </h2>
           <p id="warning-desc" className="text-xs text-slate-300 leading-relaxed mt-3 px-2">
-            Warning: Payload overload detected! Consumed <strong className="text-red-400">{consumed.toLocaleString()} kcal</strong>, which exceeds your daily target limit of <strong className="text-slate-100">{target.toLocaleString()} kcal</strong> by <strong className="text-red-400">+{surplus.toLocaleString()} kcal</strong>. Stabilize orbit parameters.
+            Warning: Calorie core overload detected! Consumed <strong className="text-red-400">{consumed.toLocaleString()} kcal</strong>, which exceeds your daily target limit of <strong className="text-slate-100">{target.toLocaleString()} kcal</strong> by <strong className="text-red-400">+{surplus.toLocaleString()} kcal</strong>. Stabilize nutrition parameters.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export const WarningModal: React.FC = () => {
             className="w-full py-3 font-bold uppercase tracking-wider flex items-center justify-center gap-2 group focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             <Orbit className="w-4 h-4 text-white group-hover:rotate-180 transition-transform duration-700" />
-            <span>Stabilize Orbit</span>
+            <span>Stabilize Parameters</span>
           </Button>
         </div>
       </div>

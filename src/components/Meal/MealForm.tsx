@@ -6,7 +6,7 @@ import { scaleNutrient } from '../../utils/calculator';
 import { analyzeFood, fileToBase64, hasApiKey } from '../../utils/openai';
 import { Button } from '../Common/Button';
 import { Input } from '../Common/Input';
-import { Camera, Sparkles, Scale, Volume2, Upload, ImagePlus, Zap, Check, AlertTriangle } from 'lucide-react';
+import { Camera, Sparkles, Scale, Volume2, Upload, ImagePlus, Zap, Check, AlertTriangle, Video, VideoOff } from 'lucide-react';
 
 const playBeep = (freq = 800, duration = 0.15, type: OscillatorType = 'sine') => {
   try {
@@ -50,9 +50,15 @@ export const MealForm: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isApiMode, setIsApiMode] = useState(false);
 
-  // Sound feedback toggle
+  // Live Camera State
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  // Refs
   const [soundEnabled, setSoundEnabled] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Validation
   const validateForm = (): boolean => {
@@ -104,18 +110,46 @@ export const MealForm: React.FC = () => {
     if (soundEnabled) playBeep(900, 0.1, 'triangle');
   };
 
-  // ── Real OpenAI Image Analysis ──
-  const handleImageFile = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setScanError('Please upload an image file (JPG, PNG, WebP, etc.).');
-      return;
+  // Close Live Camera Feed
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
-
-    if (file.size > 20 * 1024 * 1024) {
-      setScanError('Image must be under 20 MB.');
-      return;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
+    setIsCameraActive(false);
+  }, []);
 
+  // Open Live Camera Feed
+  const startCamera = async () => {
+    setCameraError(null);
+    setScanError(null);
+    setScanResultName(null);
+    setPreviewImage(null);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+      setIsCameraActive(true);
+      if (soundEnabled) playBeep(700, 0.15, 'sine');
+    } catch (err) {
+      setCameraError('Camera access denied or unavailable. Please upload a photo instead.');
+      setIsCameraActive(false);
+      if (soundEnabled) playBeep(300, 0.3, 'sawtooth');
+    }
+  };
+
+  // Image processing entrypoint
+  const handleImageString = async (base64: string) => {
     setScanError(null);
     setIsScanning(true);
     setIsApiMode(true);
@@ -123,13 +157,11 @@ export const MealForm: React.FC = () => {
     setScanConfidence(0);
 
     try {
-      const base64 = await fileToBase64(file);
       setPreviewImage(base64);
 
       if (soundEnabled) playBeep(520, 0.2, 'sine');
 
       if (hasApiKey()) {
-        // ── Real OpenAI API path ──
         const steps = [
           'Encoding image payload...',
           'Transmitting to GPT-4o vision core...',
@@ -161,7 +193,6 @@ export const MealForm: React.FC = () => {
           setTimeout(() => playBeep(1200, 0.15, 'sine'), 80);
         }
       } else {
-        // ── Mock fallback when no API key ──
         await runMockScan();
       }
     } catch (error) {
@@ -173,13 +204,58 @@ export const MealForm: React.FC = () => {
     }
   };
 
-  // ── Mock scan (no API key) ──
+  const handleImageFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setScanError('Please upload an image file (JPG, PNG, WebP, etc.).');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setScanError('Image must be under 20 MB.');
+      return;
+    }
+    try {
+      const base64 = await fileToBase64(file);
+      await handleImageString(base64);
+    } catch (e) {
+      setScanError('Failed to read image payload.');
+    }
+  };
+
+  // Capture Snapshot Frame from Video
+  const captureSnapshot = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Draw active video frame
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL('image/jpeg');
+
+      // Stop camera feed
+      stopCamera();
+
+      // Trigger analysis
+      handleImageString(base64);
+    } catch (e) {
+      setScanError('Failed to capture frame from video.');
+      stopCamera();
+    }
+  };
+
+  // Mock scan handler
   const runMockScan = async () => {
     setIsApiMode(false);
     const steps = [
-      'Initializing gravity-defying vision sensor...',
+      'Initializing health vision sensor...',
       'Refracting light spectrum analysis...',
-      'Matching molecular signature against mock base...',
+      'Matching molecular signature against local base...',
       'De-gravitating food mass readings...',
       'Locking coordinates...',
     ];
@@ -211,6 +287,7 @@ export const MealForm: React.FC = () => {
 
   const triggerMockScan = async () => {
     if (isScanning) return;
+    stopCamera();
     setIsScanning(true);
     setScanError(null);
     setScanResultName(null);
@@ -222,7 +299,7 @@ export const MealForm: React.FC = () => {
     }
   };
 
-  // Drag-and-drop handlers
+  // Drag-and-drop
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -239,14 +316,15 @@ export const MealForm: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    stopCamera();
     const file = e.dataTransfer.files[0];
     if (file) handleImageFile(file);
-  }, [soundEnabled]);
+  }, [soundEnabled, stopCamera]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    stopCamera();
     const file = e.target.files?.[0];
     if (file) handleImageFile(file);
-    // Reset file input so the same file can be selected again
     e.target.value = '';
   };
 
@@ -269,7 +347,6 @@ export const MealForm: React.FC = () => {
       },
     });
 
-    // Reset Form
     setFoodName('');
     setGrams(100);
     setScanResultName(null);
@@ -321,7 +398,7 @@ export const MealForm: React.FC = () => {
               id="foodName"
               value={foodName}
               onChange={(e) => setFoodName(e.target.value)}
-              placeholder="e.g. Chicken breast, Protein shake"
+              placeholder="e.g. Chicken breast, Paneer tikka"
               error={errors.foodName}
               required
             />
@@ -435,7 +512,7 @@ export const MealForm: React.FC = () => {
           <div className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-blue-400 text-glow-accent" />
             <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
-              AI Food Vision
+              Aarogya Food Vision
             </h2>
           </div>
           {hasApiKey() && (
@@ -455,9 +532,9 @@ export const MealForm: React.FC = () => {
           aria-label="Upload food image"
         />
 
-        {/* Drop zone / scanner display */}
+        {/* Drop zone / Scanner viewport */}
         <div
-          className={`relative flex-1 rounded-2xl border-2 border-dashed overflow-hidden flex flex-col items-center justify-center p-4 text-center transition-all duration-300 min-h-[200px] cursor-pointer ${
+          className={`relative flex-1 rounded-2xl border-2 border-dashed overflow-hidden flex flex-col items-center justify-center p-4 text-center transition-all duration-300 min-h-[220px] ${
             isDragging
               ? 'border-blue-400 bg-blue-500/5 shadow-[0_0_30px_rgba(59,130,246,0.15)]'
               : isScanning
@@ -467,19 +544,46 @@ export const MealForm: React.FC = () => {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => !isScanning && fileInputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          aria-label="Drop food image here or click to upload"
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
+          role="region"
+          aria-label="Food photo drop zone"
         >
-          {isScanning ? (
+          {isCameraActive ? (
+            <div className="absolute inset-0 w-full h-full flex flex-col justify-end">
+              <video
+                ref={videoRef}
+                className="absolute inset-0 w-full h-full object-cover"
+                playsInline
+                muted
+              />
+              <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 px-2.5 py-0.5 bg-red-500/20 text-red-400 rounded-full border border-red-500/40 text-[9px] font-bold uppercase tracking-wider animate-pulse">
+                <Video className="w-3.5 h-3.5" /> LIVE CAMERA STREAM
+              </div>
+              <div className="relative z-10 p-3 bg-gradient-to-t from-slate-950/95 to-slate-950/20 flex gap-2 w-full">
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={captureSnapshot}
+                  className="flex-1 text-[10px] font-bold tracking-wider uppercase py-2 flex items-center justify-center gap-1.5"
+                >
+                  <Camera className="w-3.5 h-3.5" /> Snapshot Dish
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={stopCamera}
+                  className="text-[10px] font-bold tracking-wider uppercase py-2"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : isScanning ? (
             <>
               <div className="scan-line" />
               {previewImage && (
                 <img
                   src={previewImage}
-                  alt="Food being analyzed"
+                  alt="Food telemetry focus"
                   className="absolute inset-0 w-full h-full object-cover opacity-20 blur-sm"
                 />
               )}
@@ -525,53 +629,72 @@ export const MealForm: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3 py-4">
-              <div className="w-14 h-14 rounded-2xl border border-slate-800/80 flex items-center justify-center text-slate-500 bg-slate-900/40 group-hover:border-blue-500/40 group-hover:text-blue-400 transition-all duration-300">
+            <div className="flex flex-col items-center gap-3 py-4 cursor-pointer w-full h-full justify-center" onClick={() => fileInputRef.current?.click()}>
+              <div className="w-14 h-14 rounded-2xl border border-slate-800/80 flex items-center justify-center text-slate-500 bg-slate-900/40 hover:border-blue-500/40 hover:text-blue-400 transition-all duration-300">
                 <ImagePlus className="w-7 h-7" />
               </div>
               <div>
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   {isDragging ? 'Drop Image Here' : 'Upload Food Photo'}
                 </h3>
-                <p className="text-[11px] text-slate-600 mt-1.5 max-w-[200px] leading-relaxed">
+                <p className="text-[11px] text-slate-600 mt-1.5 max-w-[200px] leading-relaxed mx-auto">
                   {hasApiKey()
                     ? 'Drop or click to upload. GPT-4o will detect food & nutrients.'
-                    : 'Configure API key in Settings for real detection, or use mock scan below.'}
+                    : 'Configure API key in Settings for real detection, or use mock scan.'}
                 </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Error display */}
+        {/* Error notification display */}
         {scanError && (
           <div className="flex items-start gap-2 bg-red-950/30 border border-red-500/20 rounded-xl p-3 text-xs text-red-300">
             <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
             <span>{scanError}</span>
           </div>
         )}
+        {cameraError && (
+          <div className="flex items-start gap-2 bg-red-950/30 border border-red-500/20 rounded-xl p-3 text-xs text-red-300">
+            <VideoOff className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <span>{cameraError}</span>
+          </div>
+        )}
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 gap-2">
+          <Button
+            type="button"
+            onClick={startCamera}
+            disabled={isScanning || isCameraActive}
+            variant="secondary"
+            className="text-[10px] sm:text-xs font-bold uppercase tracking-wider py-2.5 flex items-center justify-center gap-1.5"
+            title="Start live device camera capture"
+          >
+            <Video className="w-3.5 h-3.5 text-blue-400" />
+            <span>Camera</span>
+          </Button>
+
           <Button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isScanning}
+            disabled={isScanning || isCameraActive}
             variant="primary"
-            className="flex-1 text-xs font-bold uppercase tracking-wider py-2.5 flex items-center justify-center gap-1.5"
+            className="text-[10px] sm:text-xs font-bold uppercase tracking-wider py-2.5 flex items-center justify-center gap-1.5"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>Upload Photo</span>
+            <span>Upload</span>
           </Button>
+
           <Button
             type="button"
             onClick={triggerMockScan}
-            disabled={isScanning}
+            disabled={isScanning || isCameraActive}
             variant="secondary"
-            className="text-xs font-bold uppercase tracking-wider py-2.5 flex items-center justify-center gap-1.5"
+            className="text-[10px] sm:text-xs font-bold uppercase tracking-wider py-2.5 flex items-center justify-center gap-1.5"
           >
             <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-            <span>Mock Scan</span>
+            <span>Mock</span>
           </Button>
         </div>
       </div>
