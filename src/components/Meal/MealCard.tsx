@@ -1,5 +1,5 @@
 import React from 'react';
-import { FoodItem } from '../../types/nutrition';
+import type { FoodItem } from '../../types/nutrition';
 import { Trash2 } from 'lucide-react';
 
 interface MealCardProps {

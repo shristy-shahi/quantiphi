@@ -380,4 +380,4 @@ A successful contributor to this project should be comfortable with:
 - Documentation
 - Collaborative development with AI tools
 
-By following these standards, the project remains clean, maintainable, and ready for future growth.
+By following these standards, the project remains clean, maintainable, and ready for future growth

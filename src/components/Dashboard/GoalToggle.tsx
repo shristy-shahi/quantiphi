@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNutrition } from '../../hooks/useNutrition';
-import { FitnessGoal } from '../../types/nutrition';
+import type { FitnessGoal } from '../../types/nutrition';
 import { Button } from '../Common/Button';
 import { Target } from 'lucide-react';
 

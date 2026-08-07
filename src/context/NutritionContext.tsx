@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { NutritionState, NutritionAction } from '../types/nutrition';
+import type { NutritionState, NutritionAction } from '../types/nutrition';
 
 export interface NutritionContextProps {
   state: NutritionState;

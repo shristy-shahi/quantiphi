@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useReducer } from 'react';
 import { NutritionContext } from './NutritionContext';
 import { nutritionReducer, initialNutritionState } from './NutritionReducer';
 

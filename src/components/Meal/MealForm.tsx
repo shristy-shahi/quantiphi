@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNutrition } from '../../hooks/useNutrition';
-import { FOOD_DATABASE, MockFood } from '../../data/foodDatabase';
+import { FOOD_DATABASE } from '../../data/foodDatabase';
+import type { MockFood } from '../../data/foodDatabase';
 import { scaleNutrient } from '../../utils/calculator';
 import { Button } from '../Common/Button';
 import { Input } from '../Common/Input';
-import { Camera, Sparkles, Scale, AlertCircle, Volume2 } from 'lucide-react';
+import { Camera, Sparkles, Scale, Volume2 } from 'lucide-react';
 
 const playBeep = (freq = 800, duration = 0.15, type: OscillatorType = 'sine') => {
   try {
